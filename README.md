@@ -53,12 +53,12 @@ It's quite simple to add a dependency. Simply add it to your `Nut.toml` file:
 ```toml
 [dependencies]
 
-github.com/octokit/go-octokit =
+github.com/octokit/go-octokit/octokit = ""
 github.com/fhs/go-netrc/netrc = "4422b68c9c"
 ```
 
 The format of declaring a dependency is `PACKAGE = COMMIT-ISH`.
-`PACKAGE` is valid package path that passes into `go get`.
+`PACKAGE` is a valid package path that passes into `go get`.
 `COMMIT-ISH` can be any tag, sha or branch.
 A blank `COMMIT-ISH` means the latest version of the dependency.
 
@@ -82,7 +82,7 @@ vendor
 The package name of a dependency is rewritten to the `PACKAGE_NAME` definite in `Nut.toml`.
 The import paths of a dependency is rewritten to refer directly to the project folder.
 
-## Import a dependency
+## Importing a dependency
 
 To import to a dependency, refer to it by its full import path:
 
@@ -100,12 +100,12 @@ func main() {
 }
 ```
 
-## Build a project
+## Building
 
 All dependencies are properly vendored to `vendor/_nuts` and your program is referring to import paths relative to this folder.
 `go build` and `go test` should just work.
 
-## Prior art
+## Other arts
 
 * [godep](https://github.com/tools/godep)
 * [party](https://github.com/mjibson/party)
