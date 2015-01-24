@@ -90,8 +90,8 @@ To import to a dependency, refer to it by its full import path:
 package main
 
 import (
-  github.com/jingweno/hello_world/vendor/_nuts/go-octokit
-  github.com/jingweno/hello_world/vendor/_nuts/go-netrc
+  github.com/jingweno/hello_world/vendor/_nuts/github.com/octokit/go-octokit/octokit
+  github.com/jingweno/hello_world/vendor/_nuts/github.com/fhs/go-netrc
 )
 
 func main() {
