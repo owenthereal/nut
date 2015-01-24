@@ -6,7 +6,7 @@ Gophers love nuts.
 
 `nut` is a tool that allows Go projects to declare dependencies, download dependencies, rewrite import paths and ensure that dependencies are properly vendored.
 
-To accomplish this goal, `nut` does two things:
+To accomplish this goal, `nut` does three things:
 
 * Introduces a metadata file with dependency information.
 * Fetches your project's dependencies and rewrite their import paths.
