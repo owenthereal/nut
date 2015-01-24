@@ -1,11 +1,6 @@
 package main
 
-import (
-	"os"
-	"path/filepath"
-
-	"github.com/BurntSushi/toml"
-)
+import "github.com/BurntSushi/toml"
 
 type Config struct {
 	App  App  `toml:"application"`
@@ -22,17 +17,10 @@ type Deps map[string]string
 
 func loadConfig() (*Config, error) {
 	var c Config
-	_, err := toml.DecodeFile(configFile(), &c)
+	_, err := toml.DecodeFile(setting.ConfigFile, &c)
 	if err != nil {
 		return nil, err
 	}
 
 	return &c, nil
-}
-
-func configFile() string {
-	dir, err := os.Getwd()
-	check(err)
-
-	return filepath.Join(dir, "Nut.toml")
 }

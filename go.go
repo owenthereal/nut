@@ -1,21 +1,14 @@
 package main
 
 import (
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"strings"
 )
 
-var goPath string
-
-func init() {
-	goPath = tempDir()
-}
-
 func goCmd(args ...string) error {
 	c := exec.Command("go", args...)
-	c.Env = append(envNoGopath(), "GOPATH="+goPath)
+	c.Env = append(envNoGopath(), "GOPATH="+setting.WorkDir())
 	c.Stdin = os.Stdin
 	c.Stdout = os.Stdout
 	c.Stderr = os.Stderr
@@ -30,11 +23,4 @@ func envNoGopath() (a []string) {
 		}
 	}
 	return a
-}
-
-func tempDir() string {
-	dir, err := ioutil.TempDir("", "nut")
-	check(err)
-
-	return dir
 }

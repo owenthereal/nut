@@ -16,8 +16,7 @@ var install = cli.Command{
 }
 
 func runInstall(c *cli.Context) {
-	config, err := loadConfig()
-	check(err)
+	config := setting.Config()
 
 	for d, c := range config.Deps {
 		fmt.Printf("%s@%s\n", d, c)
@@ -31,12 +30,7 @@ func runInstall(c *cli.Context) {
 }
 
 func copyDep(dep string) error {
-	dir, err := os.Getwd()
-	if err != nil {
-		return err
-	}
-
-	return copyDir(filepath.Join(goPath, "src"), filepath.Join(dir, "vendor", "_nuts"))
+	return copyDir(filepath.Join(setting.WorkDir(), "src"), filepath.Join(setting.ProjectDir, "vendor", "_nuts"))
 }
 
 func copyDir(source string, dest string) (err error) {
