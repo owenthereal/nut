@@ -73,16 +73,18 @@ Let's take a look this folder:
 $ tree vendor
 vendor
 └── _nuts
-    ├── go-netrc
-    |   ...
-    └── go-octokit
-    |   ...
+    └── github.com
+        ├── fhs
+        │   └── go-netrc
+        │       ...
+        └── octokit
+            └── go-octokit
+                ...
 
-8 directories, 73 files
+20 directories, 98 files
 ```
 
-The package name of a dependency is rewritten to the `PACKAGE_NAME` definite in `Nut.toml`.
-The import paths of a dependency is rewritten to refer directly to the project folder.
+The import paths of all dependencies is rewritten to relative to `vendor/_nuts`.
 
 ## Importing a dependency
 
