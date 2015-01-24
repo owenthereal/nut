@@ -2,6 +2,8 @@
 
 Gophers love nuts.
 
+![nut](https://raw.githubusercontent.com/gophergala/nut/master/nut.png)
+
 `nut` is a tool that allows Go projects to declare dependencies, download dependencies, rewrite import paths and ensure that dependencies are properly vendored.
 
 To accomplish this goal, `nut` does two things:
