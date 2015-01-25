@@ -9,6 +9,24 @@ import (
 	"strings"
 )
 
+func rewrite(pkgs []*Pkg, prefix string) error {
+	importPaths := make([]string, 0)
+	files := make([]string, 0)
+	for _, pkg := range pkgs {
+		importPaths = append(importPaths, pkg.ImportPath)
+		files = append(files, pkg.GoFiles()...)
+	}
+
+	for _, file := range files {
+		err := rewriteGoFile(file, prefix, importPaths)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
 func rewriteGoFile(file, prefix string, importPaths []string) error {
 	fset := token.NewFileSet()
 	f, err := parser.ParseFile(fset, file, nil, parser.ParseComments)

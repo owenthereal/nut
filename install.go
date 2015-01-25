@@ -18,18 +18,34 @@ var install = cli.Command{
 func runInstall(c *cli.Context) {
 	config := setting.Config()
 
+	deps := make([]string, 0)
 	for d, c := range config.Deps {
-		fmt.Printf("%s@%s\n", d, c)
+		cc := c
+		if cc == "" {
+			cc = "latest"
+		}
+		fmt.Printf("%s@%s\n", d, cc)
 
-		err := goCmd("get", "-d", d)
+		err := runGoCmd("get", "-d", "-t", d)
 		check(err)
 
-		err = copyDep(d)
-		check(err)
+		deps = append(deps, d)
 	}
+
+	p, err := loadPackages(deps...)
+	check(err)
+
+	pkgs, err := loadPkgs(p)
+	check(err)
+
+	err = rewrite(pkgs, "github.com/gophergala/nut")
+	check(err)
+
+	err = copyDeps()
+	check(err)
 }
 
-func copyDep(dep string) error {
+func copyDeps() error {
 	return copyDir(filepath.Join(setting.WorkDir(), "src"), filepath.Join(setting.ProjectDir, "vendor", "_nuts"))
 }
 

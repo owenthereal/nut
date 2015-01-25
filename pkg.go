@@ -23,7 +23,9 @@ type Pkg struct {
 
 func (p *Pkg) addGoFiles(files []string) {
 	for _, file := range files {
-		p.goFiles[file] = true
+		if _, ok := p.goFiles[file]; !ok {
+			p.goFiles[file] = true
+		}
 	}
 }
 
@@ -36,51 +38,83 @@ func (p *Pkg) GoFiles() []string {
 	return files
 }
 
-func loadPkg(a []*Package) (pkgs []*Pkg, err error) {
-	pkgMap := make(map[string]*Pkg)
-	// for declared dependencies
-	for _, aa := range a {
-		if aa.Standard {
+func loadAPkg(p *Package, pkgMap map[string]*Pkg) error {
+	err := runGoCmd("get", "-d", "-t", p.ImportPath)
+	if err != nil {
+		return err
+	}
+
+	_, reporoot, err := vcs.FromDir(p.Dir, filepath.Join(p.Root, "src"))
+	if err != nil {
+		return err
+	}
+
+	pkg, ok := pkgMap[reporoot]
+	if !ok {
+		pkg = NewPkg(reporoot)
+		pkgMap[reporoot] = pkg
+	}
+	pkg.addGoFiles(p.AllGoFiles())
+
+	return nil
+}
+
+func loadPkg(ps []*Package, pkgMap map[string]*Pkg, seen map[string]bool) error {
+	for _, p := range ps {
+		if p.Standard {
 			continue
 		}
 
-		_, reporoot, err := vcs.FromDir(aa.Dir, filepath.Join(aa.Root, "src"))
+		if _, ok := seen[p.ImportPath]; ok {
+			continue
+		}
+		seen[p.ImportPath] = true
+
+		// for itself
+		err := loadAPkg(p, pkgMap)
 		if err != nil {
-			return nil, err
+			return err
 		}
 
-		pkg, ok := pkgMap[reporoot]
-		if !ok {
-			pkg = NewPkg(reporoot)
-			pkgMap[reporoot] = pkg
-		}
-		pkg.addGoFiles(aa.AllGoFiles())
+		// for its test dependencies
+		testImports := p.TestImports
+		testImports = append(testImports, p.XTestImports...)
 
-		depPkgs, err := loadPackages(aa.Deps...)
+		testPkgs, err := loadPackages(testImports...)
 		if err != nil {
-			return nil, err
+			return err
 		}
 
-		// for declared dependencies' dependencies
-		for _, depPkg := range depPkgs {
-			if depPkg.Standard {
-				continue
-			}
+		err = loadPkg(testPkgs, pkgMap, seen)
+		if err != nil {
+			return err
+		}
 
-			_, reporoot, err := vcs.FromDir(depPkg.Dir, filepath.Join(depPkg.Root, "src"))
-			if err != nil {
-				return nil, err
-			}
+		// for its dependencies
+		depPkgs, err := loadPackages(p.Deps...)
+		if err != nil {
+			return err
+		}
 
-			pkg, ok := pkgMap[reporoot]
-			if !ok {
-				pkg = NewPkg(reporoot)
-				pkgMap[reporoot] = pkg
-			}
-			pkg.addGoFiles(depPkg.AllGoFiles())
+		err = loadPkg(depPkgs, pkgMap, seen)
+		if err != nil {
+			return err
 		}
 	}
 
+	return nil
+}
+
+func loadPkgs(a []*Package) ([]*Pkg, error) {
+	pkgMap := make(map[string]*Pkg)
+	seen := make(map[string]bool)
+
+	err := loadPkg(a, pkgMap, seen)
+	if err != nil {
+		return nil, err
+	}
+
+	var pkgs []*Pkg
 	for _, pkg := range pkgMap {
 		pkgs = append(pkgs, pkg)
 	}
