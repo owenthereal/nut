@@ -6,14 +6,24 @@ import (
 	"strings"
 )
 
-func goCmd(args ...string) error {
-	c := exec.Command("go", args...)
-	c.Env = append(envNoGopath(), "GOPATH="+setting.WorkDir())
+func runGoCmd(args ...string) error {
+	c := newGoCmd(args...)
 	c.Stdin = os.Stdin
 	c.Stdout = os.Stdout
 	c.Stderr = os.Stderr
 
 	return c.Run()
+}
+
+func newGoCmd(args ...string) *exec.Cmd {
+	c := exec.Command("go", args...)
+	c.Env = goCmdEnv()
+
+	return c
+}
+
+func goCmdEnv() []string {
+	return append(envNoGopath(), "GOPATH="+setting.WorkDir())
 }
 
 func envNoGopath() (a []string) {
