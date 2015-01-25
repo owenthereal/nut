@@ -31,6 +31,9 @@ func runInstall(c *cli.Context) {
 	err = rewrite(pkgs, currentPkg[0].ImportPath)
 	check(err)
 
+	err = os.RemoveAll(setting.VendorDir())
+	check(err)
+
 	err = copyPkgs(pkgs)
 	check(err)
 }
