@@ -28,7 +28,7 @@ Let's checkout what `nut` has generated for us:
 $ cd hello_world
 $ tree .
 .
-├── LICENSE
+├── .gitignore
 ├── Nut.toml
 ├── README.md
 └── main.go

@@ -12,7 +12,7 @@ import (
 	"github.com/gophergala/nut/vendor/_nuts/github.com/codegangsta/cli"
 )
 
-var install = cli.Command{
+var installCmd = cli.Command{
 	Name:   "install",
 	Usage:  "install this project's dependencies",
 	Action: runInstall,
