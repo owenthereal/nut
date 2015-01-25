@@ -36,6 +36,10 @@ func (s *Setting) WorkDir() string {
 	return s.goPath
 }
 
+func (s *Setting) VendorDir() string {
+	return filepath.Join(setting.ProjectDir, "vendor", "_nuts")
+}
+
 func (s *Setting) Config() *Config {
 	if s.config == nil {
 		var err error

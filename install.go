@@ -31,12 +31,12 @@ func runInstall(c *cli.Context) {
 	err = rewrite(pkgs, currentPkg[0].ImportPath)
 	check(err)
 
-	err = copyDeps()
+	err = copyPkgs(pkgs)
 	check(err)
 }
 
-func copyDeps() error {
-	return copyDir(filepath.Join(setting.WorkDir(), "src"), filepath.Join(setting.ProjectDir, "vendor", "_nuts"))
+func copyPkgs(pkgs []*Pkg) error {
+	return copyDir(filepath.Join(setting.WorkDir(), "src"), setting.VendorDir())
 }
 
 func copyDir(source string, dest string) (err error) {
@@ -56,6 +56,12 @@ func copyDir(source string, dest string) (err error) {
 	for _, obj := range objects {
 		sourcefilepointer := source + "/" + obj.Name()
 		destinationfilepointer := dest + "/" + obj.Name()
+
+		// ignore dir starting with . or _
+		c := obj.Name()[0]
+		if obj.IsDir() && (c == '.' || c == '_') {
+			continue
+		}
 
 		if obj.IsDir() {
 			err = copyDir(sourcefilepointer, destinationfilepointer)
