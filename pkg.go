@@ -2,22 +2,27 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
 	"os"
 	"path/filepath"
-
-	"golang.org/x/tools/go/vcs"
 )
 
-func NewPkg(importPath string) *Pkg {
+func NewPkg(dir, importPath, rev string, vcs *VCS) *Pkg {
 	return &Pkg{
+		Dir:        dir,
 		ImportPath: importPath,
+		Rev:        rev,
+		vcs:        vcs,
 		goFiles:    make(map[string]bool),
 	}
 }
 
 type Pkg struct {
+	Dir        string
 	ImportPath string
+	Rev        string
+	vcs        *VCS
 	goFiles    map[string]bool
 }
 
@@ -39,15 +44,50 @@ func (p *Pkg) GoFiles() []string {
 }
 
 type PkgLoader struct {
+	Deps ConfigDeps
 }
 
-func (pl *PkgLoader) Load(name ...string) ([]*Pkg, error) {
-	p, err := listPkgs(name...)
+func (pl *PkgLoader) Load() ([]*Pkg, error) {
+	var names []string
+	for dep, rev := range pl.Deps {
+		if rev == "" {
+			rev = "latest"
+		}
+
+		fmt.Printf("Downloading %s@%s\n", dep, rev)
+		err := goGet(dep)
+		if err != nil {
+			return nil, err
+		}
+
+		names = append(names, dep)
+	}
+
+	// declared dependencies
+	ps, err := listPkgs(names...)
 	if err != nil {
 		return nil, err
 	}
 
-	pkgs, err := pl.loadPkgs(p)
+	// checkout revisions
+	for _, p := range ps {
+		rev := pl.Deps[p.ImportPath]
+		if rev == "" {
+			continue
+		}
+
+		vcs, _, err := VCSFromDir(p.Dir, filepath.Join(p.Root, "src"))
+		if err != nil {
+			return nil, err
+		}
+
+		err = vcs.Checkout(p.Dir, rev)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	pkgs, err := pl.loadPkgs(ps)
 	if err != nil {
 		return nil, err
 	}
@@ -73,6 +113,7 @@ func (pl *PkgLoader) loadPkgs(a []*pkg) ([]*Pkg, error) {
 }
 
 func (pl *PkgLoader) doLoadPkgs(ps []*pkg, pkgMap map[string]*Pkg, seen map[string]bool) error {
+	// filter not-seen third party dependencies
 	for _, p := range ps {
 		if p.Standard {
 			continue
@@ -118,20 +159,21 @@ func (pl *PkgLoader) doLoadPkgs(ps []*pkg, pkgMap map[string]*Pkg, seen map[stri
 }
 
 func (pl *PkgLoader) doLoadAPkg(p *pkg, pkgMap map[string]*Pkg) error {
-	err := runGoCmd("get", "-d", "-t", p.ImportPath)
+	err := goGet(p.ImportPath)
 	if err != nil {
 		return err
 	}
 
-	_, reporoot, err := vcs.FromDir(p.Dir, filepath.Join(p.Root, "src"))
+	vcsCmd, importPath, err := VCSFromDir(p.Dir, filepath.Join(p.Root, "src"))
 	if err != nil {
 		return err
 	}
 
-	pkg, ok := pkgMap[reporoot]
+	pkg, ok := pkgMap[importPath]
 	if !ok {
-		pkg = NewPkg(reporoot)
-		pkgMap[reporoot] = pkg
+		rev := pl.Deps[importPath]
+		pkg = NewPkg(p.Dir, importPath, rev, vcsCmd)
+		pkgMap[importPath] = pkg
 	}
 	pkg.addGoFiles(p.AllGoFiles())
 

@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"io"
 	"os"
 	"path/filepath"
@@ -17,23 +16,10 @@ var install = cli.Command{
 
 func runInstall(c *cli.Context) {
 	config := setting.Config()
-
-	deps := make([]string, 0)
-	for d, c := range config.Deps {
-		cc := c
-		if cc == "" {
-			cc = "latest"
-		}
-		fmt.Printf("%s@%s\n", d, cc)
-
-		err := runGoCmd("get", "-d", "-t", d)
-		check(err)
-
-		deps = append(deps, d)
+	pl := &PkgLoader{
+		Deps: config.Deps,
 	}
-
-	pl := &PkgLoader{}
-	pkgs, err := pl.Load(deps...)
+	pkgs, err := pl.Load()
 	check(err)
 
 	err = rewrite(pkgs, "github.com/gophergala/nut")

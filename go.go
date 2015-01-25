@@ -6,6 +6,10 @@ import (
 	"strings"
 )
 
+func goGet(pkg string) error {
+	return runGoCmd("get", "-d", "-t", pkg)
+}
+
 func runGoCmd(args ...string) error {
 	c := newGoCmd(args...)
 	c.Stdin = os.Stdin
