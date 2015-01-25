@@ -1,9 +1,13 @@
 package main
 
 import (
+	"bufio"
+	"bytes"
 	"io"
 	"os"
 	"path/filepath"
+	"regexp"
+	"strings"
 
 	"github.com/codegangsta/cli"
 )
@@ -98,7 +102,12 @@ func copyFile(source string, dest string) (err error) {
 
 	defer destfile.Close()
 
-	_, err = io.Copy(destfile, sourcefile)
+	if strings.HasSuffix(dest, ".go") {
+		err = copyWithoutImportComment(destfile, sourcefile)
+	} else {
+		_, err = io.Copy(destfile, sourcefile)
+	}
+
 	if err == nil {
 		sourceinfo, err := os.Stat(source)
 		if err != nil {
@@ -108,4 +117,41 @@ func copyFile(source string, dest string) (err error) {
 	}
 
 	return
+}
+
+func copyWithoutImportComment(w io.Writer, r io.Reader) error {
+	sc := bufio.NewScanner(r)
+	for sc.Scan() {
+		_, err := w.Write(append(stripImportComment(sc.Bytes()), '\n'))
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+const (
+	importAnnotation = `import\s+(?:"[^"]*"|` + "`[^`]*`" + `)`
+	importComment    = `(?://\s*` + importAnnotation + `\s*$|/\*\s*` + importAnnotation + `\s*\*/)`
+)
+
+var (
+	importCommentRE = regexp.MustCompile(`^\s*(package\s+\w+)\s+` + importComment + `(.*)`)
+	pkgPrefix       = []byte("package ")
+)
+
+// stripImportComment returns line with its import comment removed.
+// If s is not a package statement containing an import comment,
+// it is returned unaltered.
+// See also http://golang.org/s/go14customimport.
+func stripImportComment(line []byte) []byte {
+	if !bytes.HasPrefix(line, pkgPrefix) {
+		// Fast path; this will skip all but one line in the file.
+		// This assumes there is no whitespace before the keyword.
+		return line
+	}
+	if m := importCommentRE.FindSubmatch(line); m != nil {
+		return append(m[1], m[2]...)
+	}
+	return line
 }
