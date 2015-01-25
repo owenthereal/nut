@@ -3,17 +3,17 @@ package main
 import "github.com/BurntSushi/toml"
 
 type Config struct {
-	App  App  `toml:"application"`
-	Deps Deps `toml:"dependencies"`
+	App  ConfigApp  `toml:"application"`
+	Deps ConfigDeps `toml:"dependencies"`
 }
 
-type App struct {
+type ConfigApp struct {
 	Name    string
 	Version string
 	Authors []string
 }
 
-type Deps map[string]string
+type ConfigDeps map[string]string
 
 func loadConfig() (*Config, error) {
 	var c Config
