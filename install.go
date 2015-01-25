@@ -22,7 +22,13 @@ func runInstall(c *cli.Context) {
 	pkgs, err := pl.Load()
 	check(err)
 
-	err = rewrite(pkgs, "github.com/gophergala/nut")
+	l := pkgLister{
+		Env: os.Environ(),
+	}
+	currentPkg, err := l.List(".")
+	check(err)
+
+	err = rewrite(pkgs, currentPkg[0].ImportPath)
 	check(err)
 
 	err = copyDeps()

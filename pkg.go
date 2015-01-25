@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"os/exec"
 	"path/filepath"
 )
 
@@ -220,13 +221,26 @@ func pathOf(dir string, files []string) []string {
 	return paths
 }
 
-func listPkgs(name ...string) (a []*pkg, err error) {
+func listPkgs(name ...string) ([]*pkg, error) {
+	l := pkgLister{
+		Env: goCmdEnv(),
+	}
+	return l.List(name...)
+}
+
+type pkgLister struct {
+	Env []string
+}
+
+func (l *pkgLister) List(name ...string) (a []*pkg, err error) {
 	if len(name) == 0 {
 		return nil, nil
 	}
 
 	args := []string{"list", "-e", "-json"}
-	cmd := newGoCmd(append(args, name...)...)
+	cmd := exec.Command("go", append(args, name...)...)
+	cmd.Env = l.Env
+
 	r, err := cmd.StdoutPipe()
 	if err != nil {
 		return nil, err
