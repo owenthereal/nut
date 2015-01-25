@@ -1,6 +1,6 @@
 package main
 
-import "github.com/BurntSushi/toml"
+import "github.com/gophergala/nut/vendor/_nuts/github.com/BurntSushi/toml"
 
 type Config struct {
 	App  ConfigApp  `toml:"application"`

@@ -1,0 +1,11 @@
+[application]
+
+name = "nut"
+version = "0.0.1"
+authors = ["Jingwen Owen Ou <jingweno@gmail.com>"]
+
+[dependencies]
+
+github.com/codegangsta/cli = ""
+github.com/BurntSushi/toml = ""
+golang.org/x/tools/go/vcs = ""

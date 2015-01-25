@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/codegangsta/cli"
+	"github.com/gophergala/nut/vendor/_nuts/github.com/codegangsta/cli"
 )
 
 func main() {
