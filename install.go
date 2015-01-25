@@ -20,6 +20,10 @@ var installCmd = cli.Command{
 
 func runInstall(c *cli.Context) {
 	config := setting.Config()
+	if len(config.Deps) == 0 {
+		return
+	}
+
 	pl := &PkgLoader{
 		Deps: config.Deps,
 	}
