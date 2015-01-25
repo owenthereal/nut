@@ -32,10 +32,8 @@ func runInstall(c *cli.Context) {
 		deps = append(deps, d)
 	}
 
-	p, err := loadPackages(deps...)
-	check(err)
-
-	pkgs, err := loadPkgs(p)
+	pl := &PkgLoader{}
+	pkgs, err := pl.Load(deps...)
 	check(err)
 
 	err = rewrite(pkgs, "github.com/gophergala/nut")

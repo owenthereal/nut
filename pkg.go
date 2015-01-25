@@ -38,7 +38,86 @@ func (p *Pkg) GoFiles() []string {
 	return files
 }
 
-func loadAPkg(p *Package, pkgMap map[string]*Pkg) error {
+type PkgLoader struct {
+}
+
+func (pl *PkgLoader) Load(name ...string) ([]*Pkg, error) {
+	p, err := listPkgs(name...)
+	if err != nil {
+		return nil, err
+	}
+
+	pkgs, err := pl.loadPkgs(p)
+	if err != nil {
+		return nil, err
+	}
+
+	return pkgs, nil
+}
+
+func (pl *PkgLoader) loadPkgs(a []*pkg) ([]*Pkg, error) {
+	pkgMap := make(map[string]*Pkg)
+	seen := make(map[string]bool)
+
+	err := pl.doLoadPkgs(a, pkgMap, seen)
+	if err != nil {
+		return nil, err
+	}
+
+	var pkgs []*Pkg
+	for _, pkg := range pkgMap {
+		pkgs = append(pkgs, pkg)
+	}
+
+	return pkgs, nil
+}
+
+func (pl *PkgLoader) doLoadPkgs(ps []*pkg, pkgMap map[string]*Pkg, seen map[string]bool) error {
+	for _, p := range ps {
+		if p.Standard {
+			continue
+		}
+
+		if _, ok := seen[p.ImportPath]; ok {
+			continue
+		}
+
+		seen[p.ImportPath] = true
+
+		// for itself
+		err := pl.doLoadAPkg(p, pkgMap)
+		if err != nil {
+			return err
+		}
+
+		// for its test dependencies
+		testImports := append(p.TestImports, p.XTestImports...)
+		testPkgs, err := listPkgs(testImports...)
+		if err != nil {
+			return err
+		}
+
+		err = pl.doLoadPkgs(testPkgs, pkgMap, seen)
+		if err != nil {
+			return err
+		}
+
+		// for its dependencies
+		depPkgs, err := listPkgs(p.Deps...)
+		if err != nil {
+			return err
+		}
+
+		err = pl.doLoadPkgs(depPkgs, pkgMap, seen)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (pl *PkgLoader) doLoadAPkg(p *pkg, pkgMap map[string]*Pkg) error {
 	err := runGoCmd("get", "-d", "-t", p.ImportPath)
 	if err != nil {
 		return err
@@ -59,70 +138,7 @@ func loadAPkg(p *Package, pkgMap map[string]*Pkg) error {
 	return nil
 }
 
-func loadPkg(ps []*Package, pkgMap map[string]*Pkg, seen map[string]bool) error {
-	for _, p := range ps {
-		if p.Standard {
-			continue
-		}
-
-		if _, ok := seen[p.ImportPath]; ok {
-			continue
-		}
-		seen[p.ImportPath] = true
-
-		// for itself
-		err := loadAPkg(p, pkgMap)
-		if err != nil {
-			return err
-		}
-
-		// for its test dependencies
-		testImports := p.TestImports
-		testImports = append(testImports, p.XTestImports...)
-
-		testPkgs, err := loadPackages(testImports...)
-		if err != nil {
-			return err
-		}
-
-		err = loadPkg(testPkgs, pkgMap, seen)
-		if err != nil {
-			return err
-		}
-
-		// for its dependencies
-		depPkgs, err := loadPackages(p.Deps...)
-		if err != nil {
-			return err
-		}
-
-		err = loadPkg(depPkgs, pkgMap, seen)
-		if err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-func loadPkgs(a []*Package) ([]*Pkg, error) {
-	pkgMap := make(map[string]*Pkg)
-	seen := make(map[string]bool)
-
-	err := loadPkg(a, pkgMap, seen)
-	if err != nil {
-		return nil, err
-	}
-
-	var pkgs []*Pkg
-	for _, pkg := range pkgMap {
-		pkgs = append(pkgs, pkg)
-	}
-
-	return pkgs, nil
-}
-
-type Package struct {
+type pkg struct {
 	Dir        string
 	Root       string
 	ImportPath string
@@ -143,7 +159,7 @@ type Package struct {
 	}
 }
 
-func (p *Package) AllGoFiles() (a []string) {
+func (p *pkg) AllGoFiles() (a []string) {
 	a = append(a, pathOf(p.Dir, p.GoFiles)...)
 	a = append(a, pathOf(p.Dir, p.CgoFiles)...)
 	a = append(a, pathOf(p.Dir, p.TestGoFiles)...)
@@ -162,7 +178,7 @@ func pathOf(dir string, files []string) []string {
 	return paths
 }
 
-func loadPackages(name ...string) (a []*Package, err error) {
+func listPkgs(name ...string) (a []*pkg, err error) {
 	if len(name) == 0 {
 		return nil, nil
 	}
@@ -181,7 +197,7 @@ func loadPackages(name ...string) (a []*Package, err error) {
 	}
 	d := json.NewDecoder(r)
 	for {
-		info := new(Package)
+		info := new(pkg)
 		err = d.Decode(info)
 		if err == io.EOF {
 			break
