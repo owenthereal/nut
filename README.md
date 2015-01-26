@@ -14,6 +14,22 @@ To accomplish this goal, `nut` does three things:
 
 `nut` is specifically designed to manage dependencies for a binary program. If you are making a library, please follow [the standard Go way](https://golang.org/doc/code.html#Library).
 
+## Installation
+
+Make sure you have a working Go environment. [See the install instructions](http://golang.org/doc/install.html).
+
+To install `nut`, simply run:
+```
+$ go get github.com/gophergala/nut
+```
+
+Make sure your `PATH` includes to the `$GOPATH/bin` directory so your
+commands can be easily used:
+
+```
+export PATH=$PATH:$GOPATH/bin
+```
+
 ## Creating A New Project
 
 Inside your `GOPATH`, run:
@@ -62,7 +78,7 @@ github.com/fhs/go-netrc/netrc = "4422b68c9c"
 The format of declaring a dependency is `PACKAGE = COMMIT-ISH`.
 `PACKAGE` is a valid package path that passes into `go get`.
 `COMMIT-ISH` can be any tag, sha or branch.
-A blank `COMMIT-ISH` means the latest version of the dependency.
+An empty `COMMIT-ISH` means the latest version of the dependency.
 
 ## Downloading dependencies
 
@@ -108,6 +124,11 @@ func main() {
 
 All dependencies are properly vendored to `vendor/_nuts` and your program is referring to import paths relative to this folder.
 `go build` and `go test` should just work.
+
+## Who is using `nut`?
+
+* [nut](github.com/gophergala/nut)
+* [hub](github.com/github/hub)(WIP)
 
 ## Other arts
 
