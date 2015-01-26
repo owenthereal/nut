@@ -135,6 +135,27 @@ All dependencies are properly vendored to `vendor/_nuts` and your program is ref
 
 ![demo](https://dl.dropboxusercontent.com/u/1079131/nut_demo.gif)
 
+## FAQ
+
+### What makes `nut` different than other dependency management tools?
+
+`nut` allows you to lock dependencies, vendor them and rewrite their import paths.
+The dependencies vendored by `nut` are "self contained" and are ready for use without overriding `GOPATH`.
+Most existing dependency management tools in Go override `GOPATH` and you need an extra tool to build your project.
+With `nut`, you can build your project with just `go build`.
+`nut` properly vendors dependencies so that existing `go` commands work as a standard Go project.
+
+### Is `nut` the same as `godep save -r`?
+
+`godep` allow rewriting the import paths of dependencies with [`godep save -r`](https://github.com/tools/godep/blob/master/save.go#L46-L47).
+`nut` does exactly the same thing in this regard.
+However, `godep` doesn't allow updating any dependency with rewritten import paths.
+`nut` doesn't currently support update of dependencies but it's a high priority item that will be implemented next.
+The workflow will be as straightforward as `nut update FOO` to update an individual dependency specified in `Nut.toml`.
+
+Besides, `nut`'s design philosophy is very different from `godep`:
+`nut` is explicit about dependency management with a manifest file (`Nut.toml`) and allows locking of dependencies, whereas `godep` isn't.
+
 ## Who is using `nut`?
 
 * [nut](https://github.com/gophergala/nut)
