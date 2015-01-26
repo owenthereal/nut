@@ -100,7 +100,9 @@ vendor
 20 directories, 98 files
 ```
 
-The import paths of all dependencies is rewritten to relative to `vendor/_nuts`.
+The import paths of all dependencies are rewritten to be relative to `vendor/_nuts`.
+For example, assuming `github.com/octokit/go-octokit` depends on `github.com/sawyer/go-sawyer`,
+all the import paths of `go-octokit` to `go-sawyer` will be relative to `vendor/_nuts` since they're vendored.
 
 ## Importing a dependency
 
@@ -111,7 +113,6 @@ package main
 
 import (
   github.com/jingweno/hello_world/vendor/_nuts/github.com/octokit/go-octokit/octokit
-  github.com/jingweno/hello_world/vendor/_nuts/github.com/fhs/go-netrc
 )
 
 func main() {
