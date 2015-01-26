@@ -14,6 +14,11 @@ To accomplish this goal, `nut` does three things:
 
 `nut` is specifically designed to manage dependencies for a binary program. If you are making a library, please follow [the standard Go way](https://golang.org/doc/code.html#Library).
 
+## Voting for `nut`
+
+I made `nut` as part of the [Gopher Gala](http://www.gophergala.com/) contest.
+If you like what you see, please [vote](http://gophergala.com/voting/) for it.
+
 ## Installation
 
 Make sure you have a working Go environment. [See the install instructions](http://golang.org/doc/install.html).
