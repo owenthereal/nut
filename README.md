@@ -2,7 +2,7 @@
 
 Gophers love nuts.
 
-![nut](https://raw.githubusercontent.com/gophergala/nut/master/nut.png)
+![nut](https://dl.dropboxusercontent.com/u/1079131/nut.png)
 
 `nut` is a tool that allows Go projects to declare dependencies, download dependencies, rewrite import paths and ensure that dependencies are properly vendored.
 
@@ -125,6 +125,10 @@ func main() {
 
 All dependencies are properly vendored to `vendor/_nuts` and your program is referring to import paths relative to this folder.
 `go build` and `go test` should just work.
+
+## Demo
+
+![demo](https://dl.dropboxusercontent.com/u/1079131/nut_demo.gif)
 
 ## Who is using `nut`?
 
