@@ -132,8 +132,8 @@ All dependencies are properly vendored to `vendor/_nuts` and your program is ref
 
 ## Who is using `nut`?
 
-* [nut](github.com/gophergala/nut)
-* [hub](github.com/github/hub) (WIP)
+* [nut](https://github.com/gophergala/nut)
+* [hub](https://github.com/github/hub) (WIP)
 
 ## Other arts
 
