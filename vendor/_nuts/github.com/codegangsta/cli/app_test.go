@@ -6,7 +6,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/gophergala/nut/vendor/_nuts/github.com/codegangsta/cli"
+	"github.com/jingweno/nut/vendor/_nuts/github.com/codegangsta/cli"
 )
 
 func ExampleApp() {
