@@ -16,8 +16,9 @@ func main() {
 	app.Email = ""
 
 	app.Commands = []cli.Command{
-		newCmd,
 		installCmd,
+		listCmd,
+		newCmd,
 	}
 
 	app.Run(os.Args)
