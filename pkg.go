@@ -2,19 +2,17 @@ package main
 
 import (
 	"encoding/json"
-	"fmt"
 	"io"
 	"os"
 	"os/exec"
 	"path/filepath"
 )
 
-func NewPkg(dir, importPath, rev string, vcs *VCS) *Pkg {
+func NewPkg(dir, importPath, rev string) *Pkg {
 	return &Pkg{
 		Dir:        dir,
 		ImportPath: importPath,
 		Rev:        rev,
-		vcs:        vcs,
 		goFiles:    make(map[string]bool),
 	}
 }
@@ -23,7 +21,6 @@ type Pkg struct {
 	Dir        string
 	ImportPath string
 	Rev        string
-	vcs        *VCS
 	goFiles    map[string]bool
 }
 
@@ -45,47 +42,19 @@ func (p *Pkg) GoFiles() []string {
 }
 
 type PkgLoader struct {
+	Dir  string
 	Deps ConfigDeps
 }
 
 func (pl *PkgLoader) Load() ([]*Pkg, error) {
-	var names []string
-	for dep, rev := range pl.Deps {
-		if rev == "" {
-			rev = "latest"
-		}
-
-		fmt.Printf("Downloading %s@%s\n", dep, rev)
-		err := goGet(dep)
-		if err != nil {
-			return nil, err
-		}
-
-		names = append(names, dep)
+	var importPaths []string
+	for importPath, _ := range pl.Deps {
+		importPaths = append(importPaths, importPath)
 	}
 
-	// declared dependencies
-	ps, err := listPkgs(names...)
+	ps, err := listPkgs(importPaths...)
 	if err != nil {
 		return nil, err
-	}
-
-	// checkout revisions
-	for _, p := range ps {
-		rev := pl.Deps[p.ImportPath]
-		if rev == "" {
-			continue
-		}
-
-		vcs, _, err := VCSFromDir(p.Dir, filepath.Join(p.Root, "src"))
-		if err != nil {
-			return nil, err
-		}
-
-		err = vcs.Checkout(p.Dir, rev)
-		if err != nil {
-			return nil, err
-		}
 	}
 
 	pkgs, err := pl.loadPkgs(ps)
@@ -160,12 +129,7 @@ func (pl *PkgLoader) doLoadPkgs(ps []*pkg, pkgMap map[string]*Pkg, seen map[stri
 }
 
 func (pl *PkgLoader) doLoadAPkg(p *pkg, pkgMap map[string]*Pkg) error {
-	err := goGet(p.ImportPath)
-	if err != nil {
-		return err
-	}
-
-	vcsCmd, importPath, err := VCSFromDir(p.Dir, filepath.Join(p.Root, "src"))
+	_, importPath, err := VCSFromDir(p.Dir, filepath.Join(p.Root, "src"))
 	if err != nil {
 		return err
 	}
@@ -173,7 +137,7 @@ func (pl *PkgLoader) doLoadAPkg(p *pkg, pkgMap map[string]*Pkg) error {
 	pkg, ok := pkgMap[importPath]
 	if !ok {
 		rev := pl.Deps[importPath]
-		pkg = NewPkg(p.Dir, importPath, rev, vcsCmd)
+		pkg = NewPkg(p.Dir, importPath, rev)
 		pkgMap[importPath] = pkg
 	}
 	pkg.addGoFiles(p.AllGoFiles())

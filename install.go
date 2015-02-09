@@ -14,7 +14,7 @@ import (
 
 var installCmd = cli.Command{
 	Name:   "install",
-	Usage:  "install this project's dependencies",
+	Usage:  "install and vendor dependencies",
 	Action: runInstall,
 }
 
@@ -24,19 +24,19 @@ func runInstall(c *cli.Context) {
 		return
 	}
 
+	err := downloadPkgs(config.Deps)
+	check(err)
+
 	pl := &PkgLoader{
 		Deps: config.Deps,
 	}
 	pkgs, err := pl.Load()
 	check(err)
 
-	l := pkgLister{
-		Env: os.Environ(),
-	}
-	currentPkg, err := l.List(".")
+	p, err := NewProject()
 	check(err)
 
-	err = rewrite(pkgs, currentPkg[0].ImportPath)
+	err = rewrite(pkgs, p.ImportPath)
 	check(err)
 
 	err = os.RemoveAll(setting.VendorDir())
