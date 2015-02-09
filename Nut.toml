@@ -6,6 +6,6 @@ authors = ["Jingwen Owen Ou <jingweno@gmail.com>"]
 
 [dependencies]
 
-"github.com/codegangsta/cli" = ""
-"github.com/BurntSushi/toml" = ""
-"golang.org/x/tools/go/vcs" = ""
+github.com/codegangsta/cli = ""
+github.com/BurntSushi/toml = ""
+golang.org/x/tools/go/vcs = ""
