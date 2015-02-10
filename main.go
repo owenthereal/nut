@@ -17,7 +17,6 @@ func main() {
 
 	app.Commands = []cli.Command{
 		installCmd,
-		listCmd,
 		newCmd,
 	}
 
