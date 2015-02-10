@@ -7,7 +7,7 @@ import (
 	"os/exec"
 	"strings"
 
-	"github.com/gophergala/nut/vendor/_nuts/golang.org/x/tools/go/vcs"
+	"github.com/jingweno/nut/vendor/_nuts/golang.org/x/tools/go/vcs"
 )
 
 var vcsGit = &VCS{
