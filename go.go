@@ -6,8 +6,15 @@ import (
 	"strings"
 )
 
-func goGet(dir, importPath string) error {
-	c := newGoCmd("get", "-d", "-t", importPath)
+func goGet(dir string, importPath ...string) error {
+	if len(importPath) == 0 {
+		return nil
+	}
+
+	cmd := []string{"get", "-d", "-t"}
+	cmd = append(cmd, importPath...)
+
+	c := newGoCmd(cmd...)
 	c.Dir = dir
 
 	return c.Run()

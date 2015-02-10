@@ -28,7 +28,8 @@ func runInstall(c *cli.Context) {
 	check(err)
 
 	pl := &PkgLoader{
-		Deps: config.Deps,
+		GoPath: setting.WorkDir(),
+		Deps:   config.Deps,
 	}
 	pkgs, err := pl.Load()
 	check(err)
