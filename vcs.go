@@ -7,28 +7,42 @@ import (
 	"os/exec"
 	"strings"
 
-	"github.com/gophergala/nut/vendor/_nuts/golang.org/x/tools/go/vcs"
+	"github.com/jingweno/nut/vendor/_nuts/golang.org/x/tools/go/vcs"
 )
 
 var vcsGit = &VCS{
 	Cmd:         vcs.ByCmd("git"),
-	CheckoutCmd: "checkout {rev}",
+	IdentifyCmd: "rev-parse HEAD",
 }
 
 var vcsHg = &VCS{
 	Cmd:         vcs.ByCmd("hg"),
-	CheckoutCmd: "update -r {rev}",
+	IdentifyCmd: "identify --id --debug",
 }
 
 var vcsBzr = &VCS{
 	Cmd:         vcs.ByCmd("bzr"),
-	CheckoutCmd: "update -r {rev}",
+	IdentifyCmd: "version-info --custom --template {revision_id}",
 }
 
 var cmd = map[*vcs.Cmd]*VCS{
 	vcsBzr.Cmd: vcsBzr,
 	vcsGit.Cmd: vcsGit,
 	vcsHg.Cmd:  vcsHg,
+}
+
+func VCSForImportPath(importPath string) (*vcs.RepoRoot, *VCS, error) {
+	rr, err := vcs.RepoRootForImportPath(importPath, false)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	vcs := cmd[rr.VCS]
+	if vcs == nil {
+		return nil, nil, fmt.Errorf("%s is unsupported: %s", rr.VCS.Name, importPath)
+	}
+
+	return rr, vcs, nil
 }
 
 func VCSFromDir(dir, srcRoot string) (*VCS, string, error) {
@@ -48,11 +62,12 @@ func VCSFromDir(dir, srcRoot string) (*VCS, string, error) {
 
 type VCS struct {
 	*vcs.Cmd
-	CheckoutCmd string
+	IdentifyCmd string
 }
 
-func (v *VCS) Checkout(dir, rev string) error {
-	return v.run(dir, v.CheckoutCmd, "rev", rev)
+func (v *VCS) Identify(dir string) (string, error) {
+	out, err := v.runOutput(dir, v.IdentifyCmd)
+	return string(bytes.TrimSpace(out)), err
 }
 
 // run runs the command line cmd in the given directory.
@@ -65,6 +80,11 @@ func (v *VCS) Checkout(dir, rev string) error {
 func (v *VCS) run(dir string, cmd string, keyval ...string) error {
 	_, err := v.run1(dir, cmd, keyval, true)
 	return err
+}
+
+// runOutput is like run but returns the output of the command.
+func (v *VCS) runOutput(dir string, cmdline string, kv ...string) ([]byte, error) {
+	return v.run1(dir, cmdline, kv, true)
 }
 
 // run1 is the generalized implementation of run and runOutput.

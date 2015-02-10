@@ -8,7 +8,7 @@ import (
 	"path/filepath"
 	"text/template"
 
-	"github.com/gophergala/nut/vendor/_nuts/github.com/codegangsta/cli"
+	"github.com/jingweno/nut/vendor/_nuts/github.com/codegangsta/cli"
 )
 
 const nutTomlTmpl = `[application]

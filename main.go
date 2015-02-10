@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/gophergala/nut/vendor/_nuts/github.com/codegangsta/cli"
+	"github.com/jingweno/nut/vendor/_nuts/github.com/codegangsta/cli"
 )
 
 func main() {
@@ -16,8 +16,8 @@ func main() {
 	app.Email = ""
 
 	app.Commands = []cli.Command{
-		newCmd,
 		installCmd,
+		newCmd,
 	}
 
 	app.Run(os.Args)

@@ -9,20 +9,22 @@ import (
 var setting *Setting
 
 func init() {
-	dir, err := os.Getwd()
+	pwd, err := os.Getwd()
 	check(err)
 
 	setting = &Setting{
-		ProjectDir: dir,
-		ConfigFile: filepath.Join(dir, "Nut.toml"),
+		ProjectDir:     pwd,
+		ConfigFile:     filepath.Join(pwd, "Nut.toml"),
+		ConfigLockFile: filepath.Join(pwd, "Nut.lock"),
 	}
 }
 
 type Setting struct {
-	ProjectDir string
-	ConfigFile string
-	goPath     string
-	config     *Config
+	ProjectDir     string
+	ConfigFile     string
+	ConfigLockFile string
+	goPath         string
+	config         *Config
 }
 
 func (s *Setting) WorkDir() string {

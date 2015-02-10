@@ -9,22 +9,26 @@ import (
 	"path/filepath"
 )
 
-func NewPkg(dir, importPath, rev string, vcs *VCS) *Pkg {
+func NewPkg(dir, importPathRoot, importPath, rev string) *Pkg {
 	return &Pkg{
-		Dir:        dir,
-		ImportPath: importPath,
-		Rev:        rev,
-		vcs:        vcs,
-		goFiles:    make(map[string]bool),
+		Dir:            dir,
+		ImportPathRoot: importPathRoot,
+		ImportPath:     importPath,
+		Rev:            rev,
+		goFiles:        make(map[string]bool),
 	}
 }
 
 type Pkg struct {
-	Dir        string
-	ImportPath string
-	Rev        string
-	vcs        *VCS
-	goFiles    map[string]bool
+	Dir            string
+	ImportPathRoot string
+	ImportPath     string
+	Rev            string
+	goFiles        map[string]bool
+}
+
+func (p Pkg) String() string {
+	return fmt.Sprintf("Dir=%s, ImportPathRoot=%s, ImportPath=%s, Rev=%s, Files=%v", p.Dir, p.ImportPathRoot, p.ImportPath, p.Rev, p.GoFiles())
 }
 
 func (p *Pkg) addGoFiles(files []string) {
@@ -45,47 +49,19 @@ func (p *Pkg) GoFiles() []string {
 }
 
 type PkgLoader struct {
-	Deps ConfigDeps
+	GoPath string
+	Deps   ConfigDeps
 }
 
 func (pl *PkgLoader) Load() ([]*Pkg, error) {
-	var names []string
-	for dep, rev := range pl.Deps {
-		if rev == "" {
-			rev = "latest"
-		}
-
-		fmt.Printf("Downloading %s@%s\n", dep, rev)
-		err := goGet(dep)
-		if err != nil {
-			return nil, err
-		}
-
-		names = append(names, dep)
+	var importPaths []string
+	for importPath, _ := range pl.Deps {
+		importPaths = append(importPaths, importPath)
 	}
 
-	// declared dependencies
-	ps, err := listPkgs(names...)
+	ps, err := listPkgs(importPaths...)
 	if err != nil {
 		return nil, err
-	}
-
-	// checkout revisions
-	for _, p := range ps {
-		rev := pl.Deps[p.ImportPath]
-		if rev == "" {
-			continue
-		}
-
-		vcs, _, err := VCSFromDir(p.Dir, filepath.Join(p.Root, "src"))
-		if err != nil {
-			return nil, err
-		}
-
-		err = vcs.Checkout(p.Dir, rev)
-		if err != nil {
-			return nil, err
-		}
 	}
 
 	pkgs, err := pl.loadPkgs(ps)
@@ -100,7 +76,7 @@ func (pl *PkgLoader) loadPkgs(a []*pkg) ([]*Pkg, error) {
 	pkgMap := make(map[string]*Pkg)
 	seen := make(map[string]bool)
 
-	err := pl.doLoadPkgs(a, pkgMap, seen)
+	err := pl.recursiveLoadPkgs(a, pkgMap, seen)
 	if err != nil {
 		return nil, err
 	}
@@ -113,8 +89,8 @@ func (pl *PkgLoader) loadPkgs(a []*pkg) ([]*Pkg, error) {
 	return pkgs, nil
 }
 
-func (pl *PkgLoader) doLoadPkgs(ps []*pkg, pkgMap map[string]*Pkg, seen map[string]bool) error {
-	// filter not-seen third party dependencies
+func (pl *PkgLoader) getUnloadPkgs(ps []*pkg, seen map[string]bool) []*pkg {
+	var unloadPkgs []*pkg
 	for _, p := range ps {
 		if p.Standard {
 			continue
@@ -124,59 +100,95 @@ func (pl *PkgLoader) doLoadPkgs(ps []*pkg, pkgMap map[string]*Pkg, seen map[stri
 			continue
 		}
 
-		seen[p.ImportPath] = true
-
-		// for itself
-		err := pl.doLoadAPkg(p, pkgMap)
-		if err != nil {
-			return err
-		}
-
-		// for its test dependencies
-		testImports := append(p.TestImports, p.XTestImports...)
-		testPkgs, err := listPkgs(testImports...)
-		if err != nil {
-			return err
-		}
-
-		err = pl.doLoadPkgs(testPkgs, pkgMap, seen)
-		if err != nil {
-			return err
-		}
-
-		// for its dependencies
-		depPkgs, err := listPkgs(p.Deps...)
-		if err != nil {
-			return err
-		}
-
-		err = pl.doLoadPkgs(depPkgs, pkgMap, seen)
-		if err != nil {
-			return err
-		}
+		unloadPkgs = append(unloadPkgs, p)
 	}
 
-	return nil
+	return unloadPkgs
 }
 
-func (pl *PkgLoader) doLoadAPkg(p *pkg, pkgMap map[string]*Pkg) error {
-	err := goGet(p.ImportPath)
+func (pl *PkgLoader) getDepPkgs(ps []*pkg) ([]*pkg, error) {
+	var depPkgs []*pkg
+	for _, p := range ps {
+		// for its test dependencies
+		imports := append(p.TestImports, p.XTestImports...)
+		// for its dependencies
+		imports = append(imports, p.Deps...)
+
+		pkgs, err := listPkgs(imports...)
+		if err != nil {
+			return nil, err
+		}
+
+		depPkgs = append(depPkgs, pkgs...)
+	}
+
+	return depPkgs, nil
+}
+
+func (pl *PkgLoader) recursiveLoadPkgs(ps []*pkg, pkgMap map[string]*Pkg, seen map[string]bool) error {
+	unloadPkgs := pl.getUnloadPkgs(ps, seen)
+	if len(unloadPkgs) == 0 {
+		return nil
+	}
+
+	err := pl.doLoadPkgs(unloadPkgs, pkgMap, seen)
 	if err != nil {
 		return err
 	}
 
-	vcsCmd, importPath, err := VCSFromDir(p.Dir, filepath.Join(p.Root, "src"))
+	depPkgs, err := pl.getDepPkgs(ps)
 	if err != nil {
 		return err
 	}
 
-	pkg, ok := pkgMap[importPath]
-	if !ok {
-		rev := pl.Deps[importPath]
-		pkg = NewPkg(p.Dir, importPath, rev, vcsCmd)
-		pkgMap[importPath] = pkg
+	return pl.recursiveLoadPkgs(depPkgs, pkgMap, seen)
+}
+
+func (pl *PkgLoader) getImportPaths(ps []*pkg) []string {
+	var importPaths []string
+	for _, p := range ps {
+		importPaths = append(importPaths, p.ImportPath)
 	}
-	pkg.addGoFiles(p.AllGoFiles())
+
+	return importPaths
+}
+
+func (pl *PkgLoader) doLoadPkgs(ps []*pkg, pkgMap map[string]*Pkg, seen map[string]bool) error {
+	importPaths := pl.getImportPaths(ps)
+
+	// make sure dependencies are downloaded
+	// downloadPkg doesn't download dependencies' dependencies
+	err := goGet(pl.GoPath, importPaths...)
+	if err != nil {
+		return err
+
+	}
+
+	return pl.cachePkgs(ps, pkgMap, seen)
+}
+
+func (pl *PkgLoader) cachePkgs(ps []*pkg, pkgMap map[string]*Pkg, seen map[string]bool) error {
+	for _, p := range ps {
+		vcs, importPathRoot, err := VCSFromDir(p.Dir, filepath.Join(p.Root, "src"))
+		if err != nil {
+			return err
+		}
+
+		pkg, ok := pkgMap[p.ImportPath]
+		if !ok {
+			rev, err := vcs.Identify(p.Dir)
+			if err != nil {
+				return err
+			}
+
+			pkg = NewPkg(p.Dir, importPathRoot, p.ImportPath, rev)
+			pkgMap[p.ImportPath] = pkg
+		}
+
+		pkg.addGoFiles(p.AllGoFiles())
+
+		seen[p.ImportPath] = true
+	}
 
 	return nil
 }
