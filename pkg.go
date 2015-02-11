@@ -15,7 +15,7 @@ func NewPkg(dir, importPathRoot, importPath, rev string) *Pkg {
 		ImportPathRoot: importPathRoot,
 		ImportPath:     importPath,
 		Rev:            rev,
-		goFiles:        make(map[string]bool),
+		goFiles:        newSet(),
 	}
 }
 
@@ -24,7 +24,7 @@ type Pkg struct {
 	ImportPathRoot string
 	ImportPath     string
 	Rev            string
-	goFiles        map[string]bool
+	goFiles        set
 }
 
 func (p Pkg) String() string {
@@ -33,30 +33,22 @@ func (p Pkg) String() string {
 
 func (p *Pkg) addGoFiles(files []string) {
 	for _, file := range files {
-		if _, ok := p.goFiles[file]; !ok {
-			p.goFiles[file] = true
-		}
+		p.goFiles.Add(file)
 	}
 }
 
 func (p *Pkg) GoFiles() []string {
-	files := make([]string, 0)
-	for file, _ := range p.goFiles {
-		files = append(files, file)
-	}
-
-	return files
+	return p.goFiles.ToSliceString()
 }
 
 type PkgLoader struct {
 	GoPath string
-	Deps   ConfigDeps
 }
 
-func (pl *PkgLoader) Load() ([]*Pkg, error) {
-	var importPaths []string
-	for importPath, _ := range pl.Deps {
-		importPaths = append(importPaths, importPath)
+func (pl *PkgLoader) Load(importPaths ...string) ([]*Pkg, error) {
+	err := goGet(pl.GoPath, importPaths...)
+	if err != nil {
+		return nil, err
 	}
 
 	ps, err := listPkgs(importPaths...)
@@ -74,7 +66,7 @@ func (pl *PkgLoader) Load() ([]*Pkg, error) {
 
 func (pl *PkgLoader) loadPkgs(a []*pkg) ([]*Pkg, error) {
 	pkgMap := make(map[string]*Pkg)
-	seen := make(map[string]bool)
+	seen := newSet()
 
 	err := pl.recursiveLoadPkgs(a, pkgMap, seen)
 	if err != nil {
@@ -89,17 +81,24 @@ func (pl *PkgLoader) loadPkgs(a []*pkg) ([]*Pkg, error) {
 	return pkgs, nil
 }
 
-func (pl *PkgLoader) getUnloadPkgs(ps []*pkg, seen map[string]bool) []*pkg {
-	var unloadPkgs []*pkg
+func (pl *PkgLoader) getUnloadPkgs(ps []*pkg, seen set) []*pkg {
+	unloadPkgsMap := make(map[string]*pkg)
 	for _, p := range ps {
 		if p.Standard {
 			continue
 		}
 
-		if _, ok := seen[p.ImportPath]; ok {
+		if seen.Contains(p.ImportPath) {
 			continue
 		}
 
+		if _, ok := unloadPkgsMap[p.ImportPath]; !ok {
+			unloadPkgsMap[p.ImportPath] = p
+		}
+	}
+
+	var unloadPkgs []*pkg
+	for _, p := range unloadPkgsMap {
 		unloadPkgs = append(unloadPkgs, p)
 	}
 
@@ -107,25 +106,22 @@ func (pl *PkgLoader) getUnloadPkgs(ps []*pkg, seen map[string]bool) []*pkg {
 }
 
 func (pl *PkgLoader) getDepPkgs(ps []*pkg) ([]*pkg, error) {
-	var depPkgs []*pkg
+	s := newSet()
 	for _, p := range ps {
 		// for its test dependencies
 		imports := append(p.TestImports, p.XTestImports...)
 		// for its dependencies
 		imports = append(imports, p.Deps...)
 
-		pkgs, err := listPkgs(imports...)
-		if err != nil {
-			return nil, err
+		for _, i := range imports {
+			s.Add(i)
 		}
-
-		depPkgs = append(depPkgs, pkgs...)
 	}
 
-	return depPkgs, nil
+	return listPkgs(s.ToSliceString()...)
 }
 
-func (pl *PkgLoader) recursiveLoadPkgs(ps []*pkg, pkgMap map[string]*Pkg, seen map[string]bool) error {
+func (pl *PkgLoader) recursiveLoadPkgs(ps []*pkg, pkgMap map[string]*Pkg, seen set) error {
 	unloadPkgs := pl.getUnloadPkgs(ps, seen)
 	if len(unloadPkgs) == 0 {
 		return nil
@@ -153,21 +149,19 @@ func (pl *PkgLoader) getImportPaths(ps []*pkg) []string {
 	return importPaths
 }
 
-func (pl *PkgLoader) doLoadPkgs(ps []*pkg, pkgMap map[string]*Pkg, seen map[string]bool) error {
+func (pl *PkgLoader) doLoadPkgs(ps []*pkg, pkgMap map[string]*Pkg, seen set) error {
 	importPaths := pl.getImportPaths(ps)
 
 	// make sure dependencies are downloaded
-	// downloadPkg doesn't download dependencies' dependencies
 	err := goGet(pl.GoPath, importPaths...)
 	if err != nil {
 		return err
-
 	}
 
 	return pl.cachePkgs(ps, pkgMap, seen)
 }
 
-func (pl *PkgLoader) cachePkgs(ps []*pkg, pkgMap map[string]*Pkg, seen map[string]bool) error {
+func (pl *PkgLoader) cachePkgs(ps []*pkg, pkgMap map[string]*Pkg, seen set) error {
 	for _, p := range ps {
 		vcs, importPathRoot, err := VCSFromDir(p.Dir, filepath.Join(p.Root, "src"))
 		if err != nil {
@@ -187,7 +181,7 @@ func (pl *PkgLoader) cachePkgs(ps []*pkg, pkgMap map[string]*Pkg, seen map[strin
 
 		pkg.addGoFiles(p.AllGoFiles())
 
-		seen[p.ImportPath] = true
+		seen.Add(p.ImportPath)
 	}
 
 	return nil

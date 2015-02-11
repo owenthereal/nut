@@ -23,7 +23,7 @@ func downloadPkgs(deps ConfigDeps) error {
 	return nil
 }
 
-// downloadPkg downloads package, checkouts revision, and runs `go get ./...`
+// downloadPkg downloads package and checkouts revision to dir
 func downloadPkg(dir, importPath, rev string) error {
 	root, vcs, err := VCSForImportPath(importPath)
 	if err != nil {
@@ -42,5 +42,5 @@ func downloadPkg(dir, importPath, rev string) error {
 		err = vcs.CreateAtRev(pkgRoot, root.Repo, rev)
 	}
 
-	return goGet(pkgRoot, importPath)
+	return nil
 }

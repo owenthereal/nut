@@ -3,6 +3,7 @@ package main
 import (
 	"bufio"
 	"bytes"
+	"fmt"
 	"io"
 	"os"
 	"path/filepath"
@@ -27,11 +28,16 @@ func runInstall(c *cli.Context) {
 	err := downloadPkgs(config.Deps)
 	check(err)
 
+	fmt.Println("Vendoring dependencies")
+	var importPaths []string
+	for importPath, _ := range config.Deps {
+		importPaths = append(importPaths, importPath)
+	}
+
 	pl := &PkgLoader{
 		GoPath: setting.WorkDir(),
-		Deps:   config.Deps,
 	}
-	pkgs, err := pl.Load()
+	pkgs, err := pl.Load(importPaths...)
 	check(err)
 
 	p, err := NewProject()
