@@ -76,8 +76,8 @@ It's quite simple to add a dependency. Simply add it to your `Nut.toml` file:
 ```toml
 [dependencies]
 
-github.com/octokit/go-octokit/octokit = ""
-github.com/fhs/go-netrc/netrc = "4422b68c9c"
+"github.com/octokit/go-octokit/octokit" = ""
+"github.com/fhs/go-netrc/netrc" = "4422b68c9c"
 ```
 
 The format of declaring a dependency is `PACKAGE = COMMIT-ISH`.
