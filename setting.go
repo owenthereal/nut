@@ -24,7 +24,7 @@ type Setting struct {
 	ConfigFile     string
 	ConfigLockFile string
 	goPath         string
-	config         *Config
+	manifest       *Manifest
 }
 
 func (s *Setting) WorkDir() string {
@@ -42,12 +42,12 @@ func (s *Setting) VendorDir() string {
 	return filepath.Join(setting.ProjectDir, "vendor", "_nuts")
 }
 
-func (s *Setting) Config() *Config {
-	if s.config == nil {
+func (s *Setting) Manifest() *Manifest {
+	if s.manifest == nil {
 		var err error
-		s.config, err = loadConfig()
+		s.manifest, err = loadManifest()
 		check(err)
 	}
 
-	return s.config
+	return s.manifest
 }

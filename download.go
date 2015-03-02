@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 )
 
-func downloadPkgs(deps ConfigDeps) error {
+func downloadPkgs(deps ManifestDeps) error {
 	for importPath, rev := range deps {
 		showRev := rev
 		if showRev == "" {

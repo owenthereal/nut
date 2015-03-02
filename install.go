@@ -20,17 +20,17 @@ var installCmd = cli.Command{
 }
 
 func runInstall(c *cli.Context) {
-	config := setting.Config()
-	if len(config.Deps) == 0 {
+	manifest := setting.Manifest()
+	if len(manifest.Deps) == 0 {
 		return
 	}
 
-	err := downloadPkgs(config.Deps)
+	err := downloadPkgs(manifest.Deps)
 	check(err)
 
 	fmt.Println("Vendoring dependencies")
 	var importPaths []string
-	for importPath, _ := range config.Deps {
+	for importPath, _ := range manifest.Deps {
 		importPaths = append(importPaths, importPath)
 	}
 
