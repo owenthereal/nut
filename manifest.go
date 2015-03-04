@@ -1,6 +1,11 @@
 package main
 
-import "github.com/jingweno/nut/vendor/_nuts/github.com/BurntSushi/toml"
+import (
+	"fmt"
+	"os"
+
+	"github.com/jingweno/nut/vendor/_nuts/github.com/BurntSushi/toml"
+)
 
 type Manifest struct {
 	App  ManifestApp  `toml:"application"`
@@ -23,4 +28,20 @@ func loadManifest() (*Manifest, error) {
 	}
 
 	return &m, nil
+}
+
+// write writes the manifest data to disk
+func (m Manifest) write() error {
+	fp, err := os.Create(setting.ConfigFile)
+	if err != nil {
+		return fmt.Errorf("Error writing manifest: %s", err)
+	}
+	defer fp.Close()
+
+	err = toml.NewEncoder(fp).Encode(m)
+	if err != nil {
+		return fmt.Errorf("Error writing manifest: %s", err)
+	}
+
+	return nil
 }
