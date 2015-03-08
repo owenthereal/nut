@@ -86,16 +86,25 @@ func (c *depFinder) findDeps(p *pkg) error {
 		if dep.Standard {
 			continue
 		}
-		if !strings.HasPrefix(dep.ImportPath, c.root) && !c.isIgnored(dep.ImportPath) {
 
-			if _, found := c.deps[dep.ImportPath]; !found {
-				c.deps[dep.ImportPath] = dep
-				if c.verbose {
-					fmt.Println(dep.ImportPath)
-				}
-				c.findDeps(dep)
-			}
+		// do not scan deps twice
+		if _, found := c.deps[dep.ImportPath]; found {
+			continue
 		}
+
+		if !strings.HasPrefix(dep.ImportPath, c.root) && !c.isIgnored(dep.ImportPath) {
+			if c.verbose {
+				fmt.Println(dep.ImportPath)
+			}
+			c.deps[dep.ImportPath] = dep
+
+		} else {
+			// we put ignored packages in the dep map as nils just so we'll scan them once for their deps
+			c.deps[dep.ImportPath] = nil
+		}
+
+		// we find deps even on "ignored" packages - we want their deps
+		c.findDeps(dep)
 	}
 
 	return nil
@@ -158,6 +167,11 @@ func (c *depFinder) FindDependencies(vcsRefs bool) (map[string]string, error) {
 	}
 
 	for dep, pkg := range c.deps {
+
+		// nil pkg's are placeholders for not entering the same dir twice, we ignore them
+		if pkg == nil {
+			continue
+		}
 		tag := ""
 		if vcsRefs {
 			_, vc, err := VCSForImportPath(dep)
