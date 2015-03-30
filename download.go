@@ -7,6 +7,7 @@ import (
 )
 
 func downloadPkgs(deps ManifestDeps) error {
+	srcPath := getSrcPath(setting.WorkDir())
 	for importPath, rev := range deps {
 		showRev := rev
 		if showRev == "" {
@@ -14,7 +15,7 @@ func downloadPkgs(deps ManifestDeps) error {
 		}
 
 		fmt.Printf("Downloading %s@%s\n", importPath, showRev)
-		err := downloadPkg(setting.WorkDir(), importPath, rev)
+		err := downloadPkg(srcPath, importPath, rev)
 		if err != nil {
 			return err
 		}
@@ -43,4 +44,8 @@ func downloadPkg(dir, importPath, rev string) error {
 	}
 
 	return nil
+}
+
+func getSrcPath(path string) string {
+	return path + "/src"
 }
