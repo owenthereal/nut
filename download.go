@@ -45,7 +45,3 @@ func downloadPkg(dir, importPath, rev string) error {
 
 	return nil
 }
-
-func getSrcPath(path string) string {
-	return path + "/src"
-}

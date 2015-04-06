@@ -34,10 +34,11 @@ func runInstall(c *cli.Context) {
 		importPaths = append(importPaths, importPath)
 	}
 
+	importPathDirs := getAllDeepPaths(importPaths)
 	pl := &PkgLoader{
 		GoPath: setting.WorkDir(),
 	}
-	pkgs, err := pl.Load(importPaths...)
+	pkgs, err := pl.Load(importPathDirs...)
 	check(err)
 
 	p, err := NewProject()
