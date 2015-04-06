@@ -25,7 +25,7 @@ Make sure you have a working Go environment. [See the install instructions](http
 
 To install `nut`, simply run:
 ```
-$ go get github.com/gophergala/nut
+$ go get github.com/jingweno/nut
 ```
 
 Make sure your `PATH` includes to the `$GOPATH/bin` directory so your
@@ -158,7 +158,7 @@ Besides, `nut`'s design philosophy is very different from `godep`:
 
 ## Who is using `nut`?
 
-* [nut](https://github.com/gophergala/nut)
+* [nut](https://github.com/jingweno/nut)
 * [hub](https://github.com/github/hub) (WIP)
 
 ## Other arts
