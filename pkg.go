@@ -231,6 +231,7 @@ func listPkgs(name ...string) ([]*pkg, error) {
 	l := pkgLister{
 		Env: goCmdEnv(),
 	}
+	name = addSubPaths(name)
 	return l.List(name...)
 }
 
@@ -276,4 +277,16 @@ func (l *pkgLister) List(name ...string) (a []*pkg, err error) {
 	}
 
 	return a, nil
+}
+
+func addSubPaths(name []string) []string {
+	var paths []string
+	for _, path := range name {
+		paths = append(paths, addSubPath(path))
+	}
+	return paths
+}
+
+func addSubPath(path string) string {
+	return path + "/..."
 }
