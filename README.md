@@ -111,13 +111,13 @@ all the import paths of `go-octokit` to `go-sawyer` will be relative to `vendor/
 
 ## Importing a dependency
 
-To import to a dependency, refer to it by its full import path:
+To import a dependency, refer to it by its full import path:
 
 ```go
 package main
 
 import (
-  github.com/jingweno/hello_world/vendor/_nuts/github.com/octokit/go-octokit/octokit
+  "github.com/jingweno/hello_world/vendor/_nuts/github.com/octokit/go-octokit/octokit"
 )
 
 func main() {
