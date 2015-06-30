@@ -39,7 +39,7 @@ func (s *Setting) WorkDir() string {
 }
 
 func (s *Setting) VendorDir() string {
-	return filepath.Join(setting.ProjectDir, "vendor", "_nuts")
+	return filepath.Join(setting.ProjectDir, "internal")
 }
 
 func (s *Setting) Manifest() *Manifest {

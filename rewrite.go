@@ -71,7 +71,7 @@ func rewriteGoFile(file, prefix string, importPaths []string) error {
 	return os.Rename(wpath, file)
 }
 
-const sep = "/vendor/_nuts/"
+const sep = "/internal/"
 
 func unqualify(importPath string) string {
 	if i := strings.LastIndex(importPath, sep); i != -1 {
