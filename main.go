@@ -18,6 +18,7 @@ func main() {
 	app.Commands = []cli.Command{
 		installCmd,
 		newCmd,
+		initCmd,
 	}
 
 	app.Run(os.Args)
